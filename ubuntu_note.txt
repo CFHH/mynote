@@ -1,0 +1,554 @@
+﻿工具使用
+	打开一个新的terminal标签的快捷键：ctrl+shift+t
+	连接其他的ubuntu：ssh fct@192.168.1.125
+	FTP的使用：
+		cd到想要保存文件的位置
+		sftp fct@192.168.1.125
+		get 远程文件的路径文件名 本地文件名
+	GIT的使用：
+		下载：git clone https://github.com/CFHH/laravelapp
+		更新：cd laravelapp
+			  git pull
+
+
+sudo不能打开GUI程序
+	gedit ~/.bashrc
+	末尾添加xhost +
+	source ~/.bashrc
+
+
+开机不执行脚本/etc/rc.local
+	创建文件 /etc/systemd/system/rc-local.service
+	复制以下内容
+		[Unit]
+		 Description=/etc/rc.local Compatibility
+		 ConditionPathExists=/etc/rc.local
+		 
+		[Service]
+		 Type=forking
+		 ExecStart=/etc/rc.local start
+		 TimeoutSec=0
+		 StandardOutput=tty
+		 RemainAfterExit=yes
+		 SysVStartPriority=99
+		  
+		[Install]
+		 WantedBy=multi-user.target
+	执行sudo systemctl enable rc-local.service
+
+
+下载安装xampp和laravel
+	http://wiki.ubuntu.org.cn/Xampp
+	https://www.cnblogs.com/ido321/archive/2014/11/27/4126195.html
+安装：
+	sudo chmod 755 ./xampp-linux-x64-7.2.4-0-installer.run
+	sudo ./xampp-linux-x64-7.2.4-0-installer.run
+	安装完之后，如果想用GUI版的XAMPP，下次启动请如下操作
+		cd /opt/lampp
+		sudo ./manager-linux-x64.run
+	创建一个文件chmod_laravel.sh，放～目录下，给执行权限，以后的laravel工程目录，都需要执行一次
+		#!/bin/sh
+		chmod -R 777 ~/laravelapp/storage
+		chmod -R 777 ~/laravelapp/bootstrap
+	各配置文件目录：
+		Apache文档根目录：/opt/lampp/htdocs/
+		Apache配置文件：/opt/lampp/etc/httpd.conf
+		MySQL配置文件：/opt/lampp/etc/my.cnf
+		PHP配置文件：/opt/lampp/etc/php.ini
+		ProFTPD配置文件：/opt/lampp/etc/proftpd.conf
+		PHPMyadmin配置文件：/opt/lampp/phpmyadmin/config.inc.php
+	常用XAMPP命令（在终端以root输入）：
+		启动/停止/重启Apache：/opt/lampp/lampp start/stop/restart(包括启动/停止/重启了mysql,proftpd)
+		安全设置：/opt/lampp/lampp  security
+		使用php版本/查看版本：/opt/lampp/lampp php4(5)/phpstatus
+		只启动和停止Apache：/opt/lampp/lampp startapache/stopapache
+		只启动和停止MySQL：/opt/lampp/lampp startmysql/stopmysql
+		只启动和停止ProFTPD服务器：/opt/lampp/lampp startftp/stopftp
+		启动和停止Apache的SSL支持：/opt/lampp/lampp startssl/stopssl
+		卸载XAMPP：rm –rf /opt/lampp
+设置Xampp为开机启动
+	1. 在/etc/init.d 目錄下建立lampp.sh 文件，然后添加以下内容：
+		#!/bin/sh
+		/opt/lampp/lampp start
+		service mongod start
+	2. chmod 755 /etc/init.d/lampp.sh
+	3. 编辑/etc/rc.local在最后一行加上：
+	   	sh /etc/init.d/lampp.sh
+		或者
+		exec /etc/init.d/lampp.sh  (注：这种方法即使开机后没有登入，XAMPP还是会启动)
+安装PHP开发包（不使用phpize就不需要）
+	sudo gedit /etc/apt/sources.list
+		添加 deb http://security.ubuntu.com/ubuntu xenial-security main
+	sudo apt-get install php7.0-dev
+添加环境变量（为什么要加两处？为了避免和php开发包冲突，添加在path的开头）
+	sudo gedit /etc/profile
+		添加 export PATH=/opt/lampp/bin:$PATH
+	sudo gedit ~/.bashrc
+		添加 export PATH=/opt/lampp/bin:$PATH
+	source /etc/profile
+	source ~/.bashrc
+	测试 echo $PATH
+安装composer
+	sudo apt-get update
+	sudo apt-get install wget
+	wget https://getcomposer.org/composer.phar
+	mv composer.phar composer
+	chmod +x composer
+	sudo mv composer /usr/local/bin
+	测试安装成功 composer -v
+全局安装laravel并写入环境变量
+	composer global require "laravel/installer"
+	测试安装成功
+		cd /home/zzw/.config/composer/vendor/bin
+		./laravel -v
+	sudo gedit /etc/profile
+		添加 export PATH=$PATH:/home/zzw/.config/composer/vendor/bin
+	sudo gedit ~/.bashrc
+		添加 export PATH=$PATH:/home/zzw/.config/composer/vendor/bin
+	source /etc/profile
+	source ~/.bashrc
+创建第一个应用
+	cd ~
+	laravel new laravelapp
+	chmod -R 777 ~/laravelapp/storage
+	chmod -R 777 ~/laravelapp/bootstrap
+配置apache, mysql, php
+	修改apcahe的/opt/lampp/etc/httpd.conf
+		把/opt/lampp/htdocs改成/home/zzw/laravelapp/public
+	给musql设置密码（新密码是123456）
+		mysqladmin -u root -p password，然后按步骤先输原密码（无），然后输两遍新密码，总共有3个root账号:localhost, 127.0.0.1, ::1
+		mysql -u root -p;
+		show databases;
+		use mysql;
+		show tables;
+		select Host, User, Password from user;
+		update user set password=password("123456S") where user="root";
+		flush privileges;
+	设置最大连接数
+		/opt/lampp/etc/my.cnf中加一行 max_connections = 1000
+		mysql运行过程中，可以通过mysql>set GLOBAL max_connections=1000;
+			mysql>show variables like "max_connections";
+	修改phpMyadmin的/opt/lampp/phpmyadmin/config.inc.php
+		http://localhost/phpmyadmin/
+	创建新的DB：laravelapp
+	修改PHP：增加mongodb extension
+		需要先编译libssl.so.1.1和libcrypto.so.1.1（怎么下载和编，没研究，在/usr/lib）
+			sudo apt-get install libssl-dev
+			sudo apt-get install libmcrypt-dev
+		然后 pecl install mongodb，或者使用如下的原始方式
+			donwnload http://pecl.php.net/package/mongodb
+			tar zxvf mongodb-1.4.3.tgz
+			cd mongodb-1.4.3.tgz
+			phpize
+			./configure
+			make
+			make test
+			sudo make install
+		在/opt/lampp/etc/php.ini增加一行extension=mongodb.so
+		安装完保存在/opt/lampp/lib/php/extensions/no-debug-non-zts-20170718/mongodb.so
+		验证phpinfo中搜索mongo
+	如果在内网测试机，希望别人能访问phpmyadmin，则打开/opt/lampp/etc/extra/httpd-xampp.conf
+		找到phpmyadmin，修改Require local为Require all granted
+安装passport
+	cd ~/laravelapp/
+	composer require laravel/passport
+	php artisan migrate
+	php artisan passport:install
+
+
+mongodb数据库
+安装
+	sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+	echo "deb [ arch=amd64,arm64 ] http://mirrors.aliyun.com/mongodb/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
+	sudo apt-get update
+	sudo apt-get install -y mongodb-org或者sudo apt-get install -y mongodb-org=3.6.2 mongodb-org-server=3.6.2 mongodb-org-shell=3.6.2 mongodb-org-mongos=3.6.2 mongodb-org-tools=3.6.2
+	如果没有则手动新建/lib/systemd/system/mongod.service
+	自动启动，在lampp.sh中增加service mongod start
+命令行启动
+	sudo service mongod start
+	sudo service mongod restart
+	sudo service mongod stop
+卸载
+	sudo apt-get purge mongodb-org*
+	sudo rm -r /var/log/mongodb
+	sudo rm -r /var/lib/mongodb
+客户端操作
+	mongo
+	db.serverStatus().connections
+	show databases/show dbs
+	use laravelapp
+	show collections
+	db.oauth_clients.find()
+	db.oauth_clients.drop()
+	db.dropDatabase()
+	db.users.getIndexes()
+	db.Blocks.find({block_num:{$lt:4006000}}).sort({block_num:-1}).limit(10).explain("executionStats")
+设置密码
+	use admin
+	db.system.users.find()
+	系统级最高权限：      db.createUser({user: 'root', pwd: '123456', roles: ['root']})
+	db.auth('root', '123456')
+	laravelapp库最高权限：db.createUser({user: "zzw_owner", pwd: "123456", roles: [{role: "dbOwner", db: "laravelapp"}, {role: "read", db: "admin"}]})
+	laravelapp库可读写：  db.createUser({user: "zzw_rw", pwd: "123456", roles: [{role: "readWrite", db: "laravelapp"}, {role: "read", db: "admin"}]})
+	laravelapp库只读：    db.createUser({user: "zzw_r", pwd: "123456", roles: [{role: "read", db: "laravelapp"}, {role: "read", db: "admin"}]})
+	db.createUser({user: "zzw_test", pwd: "123456", roles: [{role: "readWrite", db: "laravelapp"}, {role: "", db: "admin"}]})
+	设置认证
+	sudo gedit /etc/mongod.conf
+		找到#security: 取消注释，修改为：
+			security:
+				authorization: enabled #注意缩进！！拷贝配置文件其他配置的缩进！！
+	sudo service mongod restart
+Windows服务
+	安装时，如果打钩compass可能安装不成功
+	假设安装在E:\MongoDB
+	创建文件夹E:\MongoDB\logs，E:\MongoDB\data\db
+	以管理员身份启动cmd
+	安装 mongod.exe --logpath E:\MongoDB\logs\mongodb.log --logappend --dbpath E:\MongoDB\data\db --directoryperdb --serviceName MongoDB --auth --install
+	卸载 E:\MongoDB\Server\3.6\bin\mongod.exe --remove
+	启动 net start MongoDB
+	停止 net stop MongoDB	
+Laravel支持：
+	对应的mongodb的PHP的扩展及相关so已经拷贝
+
+
+redis缓存：
+安装
+	sudo apt-get install redis-server
+	装完会自动启动
+	命令
+		/etc/init.d/redis-server stop
+		/etc/init.d/redis-server start
+		/etc/init.d/redis-server restart
+	配置/etc/redis/redis.conf
+		设置密码，在Windows上无效
+			requirepass 123456
+		允许外部访问
+			#bind 127.0.0.1 ::1
+			protected-mode no
+		最大连接数，默认无限制
+			# maxclients 10000
+		最大内存
+			# maxmemory <bytes>
+			# maxmemory-policy noeviction
+	默认会自动存数据到硬盘，/var/lib/redis/*.rdb，开机启动数据还在
+客户端操作
+	redis-cli 或 redis-cli -h host -p port -a password
+	info
+	info Clients
+	set key1 "hello"
+	get key1
+	dbsize		看数据库文件大小
+	select 11   选择库
+	keys *		枚举所有key
+	flushall	清空整个 Redis 服务器的数据(删除所有数据库的所有key)
+	flushdb		清空当前数据库中的所有key
+	exit		退出
+Laravel支持
+	composer require predis/predis
+
+
+Apache多站点(单IP多端口)
+	修改/opt/lampp/etc/httpd.conf
+		添加 Listen 8080
+		打开 #LoadModule vhost_alias_module modules/mod_vhost_alias.so
+		打开 #Include conf/extra/httpd-vhosts.conf
+		增加新网站目录
+			<Directory "E:/xampp/htdocs">
+				Options Indexes FollowSymLinks Includes ExecCGI
+				AllowOverride All
+				Require all granted
+			</Directory>
+	编辑/opt/lampp/etc/extra/httpd-vhosts.conf文件，增加
+		<VirtualHost *:80>
+			ServerAdmin 13436361@qq.com
+			DocumentRoot "E:/laravelapp/public"
+			ServerName localhost:80
+			ErrorLog "logs/localhost-80-error.log"
+			CustomLog "logs/localhost-80-access.log" common
+		</VirtualHost>
+
+		<VirtualHost *:8080>
+			ServerAdmin 13436361@qq.com
+			DocumentRoot "E:/xampp/htdocs"
+			ServerName localhost:8080
+			ErrorLog "logs/localhost-8080-error.log"
+			CustomLog "logs/localhost-8080-access.log" common
+		</VirtualHost>
+
+
+Nginx + php-fpm
+	安装MGINX：sudo apt-get install nginx，本身自动启动
+		安装好的文件位置：
+			/usr/sbin/nginx：主程序
+			/etc/nginx：存放配置文件
+			/usr/share/nginx：存放静态文件
+			/var/log/nginx：存放日志
+		操作命令：sudo service nginx {start|stop|restart|reload|force-reload|status|configtest|rotate|upgrade}
+	安装PHP FPM：安装完后php7.2-fpm也是开机启动的
+		sudo add-apt-repository ppa:ondrej/php
+		apt-get update
+		apt-get upgrade php
+		sudo apt-get install php7.2 php7.2-cli php7.2-fpm php7.2-curl php7.2-gd php7.2-mysql php7.2-mbstring zip unzip
+			#如果要设置默认的PHP版本update-alternatives --set php /usr/bin/php7.2
+			#sudo service php7.2-fpm status
+			#sudo service php7.2-fpm start
+			#sudo ps aux | grep php
+		查看配给nginx的socket：/etc/php/7.2/fpm/pool.d/www.conf，找这行listen = /run/php/php7.2-fpm.sock
+		操作命令：sudo service php7.2-fpm {start|stop|restart}
+		重新指定PHP配置，比如mongodb扩展
+			可执行文件在/usr/bin，php和php7.2
+			扩展目录在/usr/lib/php/20170718，通过phpinfo的extension_dir查看
+				把mongodb.so拷入
+			配置文件是/etc/php/7.2/cli/php.ini（./php -ini显示这个）和/etc/php/7.2/fpm/php.ini（nginx服务器phpinfo显示这个）
+				extension=mongodb.so
+			重启php5-fpm
+	修改/etc/nginx/site-available/default，发现官方文档也有，差不多
+		改端口
+			listen 8080 default_server;
+			listen [::]:8080 default_server;
+		改网站根目录
+			root /home/zzw/laravelapp/public;
+		改index，增加index.php
+			index index.php index.html index.htm index.nginx-debian.html;
+		增加以下配置
+			add_header X-Frame-Options "SAMEORIGIN"; 
+ 			add_header X-XSS-Protection "1; mode=block"; 
+ 			add_header X-Content-Type-Options "nosniff";
+			charset utf-8;
+			location = /favicon.ico { access_log off; log_not_found off; } 
+			location = /robots.txt { access_log off; log_not_found off; } 
+			error_page 404 /index.php;
+		修改location /
+			try_files $uri $uri/ /index.php?$query_string;
+		增加
+			location ~ \.php$ {
+				include snippets/fastcgi-php.conf;
+				fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+				#fastcgi_split_path_info ^(.+\.php)(/.+)$;
+				#fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
+				#fastcgi_index index.php;
+				#include fastcgi_params;
+			}
+
+			location ~ /\.(?!well-known).* {
+				deny all;
+			}
+
+
+PHP Opcache
+	三个配置文件都改吧
+		/opt/lampp/etc/php.ini，XAMPP跑的这个
+		/etc/php/7.2/cli/php.ini
+		/etc/php/7.2/fpm/php.ini，nginx fpm方式跑的是这个
+	具体修改[opcache]
+		;开关打开
+		opcache.enable=1
+		;可用内存, 酌情而定, 单位 megabytes
+		opcache.memory_consumption=128
+		;对多缓存文件限制, 命中率不到 100% 的话, 可以试着提高这个值
+		opcache.max_accelerated_files=10000
+		;Opcache会在一定时间内去检查文件的修改时间, 这里设置检查的时间周期, 默认为 2, 定位为秒
+		opcache.revalidate_freq=300
+	另外修改/opt/lampp/etc/php.ini
+		打开zend_extension=opcache.so
+		/etc/php/7.2/fpm不需要加也能在phpinfo中找到Zend opcache
+	改完需要重启各服务
+		sudo /opt/lampp/lampp restart
+		sudo service php7.2-fpm restart
+		sudo service nginx restart
+		可以通过phpinfo来查询opcache的情况
+
+
+HTTPS（TODO）
+	/opt/lampp/etc/httpd.conf
+	/opt/lampp/etc/extra/httpd-ssl.conf
+	/opt/lampp/etc/extra/httpd-vhosts.conf
+	安装ssl，用该已经装了
+		sudo apt-get install openssl
+	生成密钥和证书(生产的不对)
+		cd /opt/lampp/etc
+		sudo mkdir laravelapp.ssl
+		cd laravelapp.ssl
+		sudo openssl genrsa -aes256 -out laravelapp.key 1024，根据提示输入
+		sudo openssl req -sha256 -new -x509 -days 1826 -key laravelapp.key -out laravelapp.crt，根据提示输入
+	修改/opt/lampp/etc/httpd.conf
+		打开LoadModule ssl_module modules/mod_ssl.so
+		打开Include etc/extra/httpd-vhosts.conf
+	修改/opt/lampp/etc/extra/httpd-ssl.conf
+		端口443
+		DocumentRoot "/home/zzw/laravelapp/public"
+		SSLCertificateFile "/opt/lampp/etc/laravelapp.ssl/laravelapp.crt"
+		SSLCertificateKeyFile "/opt/lampp/etc/laravelapp.ssl/laravelapp.key"
+	修改/opt/lampp/etc/extra/httpd-vhosts.conf
+		<VirtualHost *:80>
+			ServerAdmin 13436361@qq.com
+			DocumentRoot "/home/zzw/laravelapp/public"
+			ServerName localhost:80
+			ServerAlias localhost:80
+			ErrorLog "logs/localhost-80-error.log"
+			CustomLog "logs/localhost-80-access.log" common
+		</VirtualHost>
+<VirtualHost *:443>
+    ServerAdmin 13436361@qq.com
+    DocumentRoot "/home/zzw/laravelapp/public"
+    ServerName www.laravelapp.com
+    #ServerAlias www.laravelapp.com
+    ErrorLog "logs/localhost-443-error.log"
+    CustomLog "logs/localhost-443-access.log" common
+	SSLEngine on
+	#SSLCertificateFile "/opt/lampp/etc/ssl.crt/server.crt"
+	#SSLCertificateKeyFile "/opt/lampp/etc/ssl.key/server.key"
+	SSLCertificateFile "/opt/lampp/etc/laravelapp.ssl/laravelapp.crt"
+	SSLCertificateKeyFile "/opt/lampp/etc/laravelapp.ssl/laravelapp.key"
+</VirtualHost>
+	重启apache
+		sudo /opt/lampp/lampp stopapache
+		sudo /opt/lampp/lampp startapache
+	
+
+
+HHVM
+	可能会代码不兼容
+
+
+Cron（TODO。。。）
+	添加流程
+		cd /var/spool/cron
+		sudo touch root
+		sudo crontab -u root ./root
+		sudo vi root
+		添加一行
+			* * * * * /opt/lampp/bin/php /home/zzw/laravelapp/artisan schedule:run >> /dev/null 2>&1
+	查看
+		sudo crontab -u root -l
+	其他命令
+		查看cron状态：sudo service cron status
+		启动cron：sudo /etc/init.d/cron start
+		关闭cron：sudo /etc/init.d/cron stop	
+		重启cron：sudo /etc/init.d/cron restart
+
+
+性能提升
+	laravel修改.env
+		APP_DEBUG=false
+		APP_ENV=prodection
+		APP_LOG=daily
+		APP_LOG_LEVEL=error
+		CACHE_DRIVER=redis
+		SESSION_DRIVER=redis
+	laravel修改代码
+		routes全部改成对controller的调用，不用closure
+		裁剪不必要的middleware，app/Http/Kernel.php，性能提升50%
+		裁剪不必要的provider, config/app.php中的'providers'数组
+		app/Providers/RouteServiceProvider的map()函数，实际不需要的（比如mapWebRoutes()）都注掉删掉
+	laravel部署时的三条优化指令
+		php artisan config:cache, php artisan config:clear
+		php artisan route:cache, php artisan route:clear
+		php artisan optimize --force, 这个已经废弃（因为有了opcache后，作者觉得没有必要了）
+		composer dumpautoload -o
+	优化linux
+		TCPIP内核参数优化，每次系统启动都需要执行
+			sudo sysctl -w net.ipv4.tcp_timestamps=1
+			sudo sysctl -w net.ipv4.tcp_tw_recycle=1，设不上
+			sudo sysctl -w net.ipv4.tcp_tw_reuse=1，/proc/sys/net/ipv4/tcp_tw_reuse
+			可以修改/etc/sysctl.conf, 用命令/sbin/sysctl -p，也没用
+		可以打开最大文件描述符的数量
+			ulimit -n 1024576
+	优化apache
+		开启Apache mpm模块
+			修改httpd.conf，打开注释#Include etc/extra/httpd-mpm.conf
+			修改extra/httpd-mpm.conf，修改参数
+				<IfModule mpm_prefork_module>
+					StartServers			500
+					MinSpareServers			500
+					MaxSpareServers			1500
+					MaxRequestWorkers		1500
+					ServerLimit				1500
+					MaxConnectionsPerChild	0
+				</IfModule>
+		使用php-fpm，或使用nginx+PHP-fpm
+			使用PDO指明长连接: $dbh = new PDO(PDO_DSN, USERNAME, PASSWORD, [PDO::ATTR_PERSISTENT => true,]);
+			laravel的话，需要在config/database.php的mysql连接下加一条: 'options' => [PDO::ATTR_PERSISTENT => true,],
+	优化PHP执行
+		开启 OpCache，性能提升数倍
+	优化负载均衡的nginx
+		proxy_set_header Connection "";
+		keepalive 1000;
+	优化mysql（抄自https://blog.csdn.net/u014044812/article/details/78929579）
+		参考windows版的my-large.ini和my-huge.ini
+		#1、[mysqld已有]避免MySQL的外部锁定，减少出错几率增强稳定性。
+		skip-external-locking	
+		#2、[mysqld增加]禁止MySQL对外部连接进行DNS解析[mysqld]（所有远程主机连接授权都要使用IP地址方式，不设show processlist显示大量unauthenticated user）
+		skip-name-resolve
+		#3、[mysqld增加]增加最大连接数，一个连接大概占内存为100多K
+		max_connections = 1000	
+		#4、[mysqld增加]如果MySQL的连接数据达到max_connections时，新来的请求将会被存在堆栈中，以等待某一连接释放资源，该堆栈的数量即back_log
+		back_log = 512
+		#5、[mysqld修改]索引的缓冲区大小，配置该参数让未命中率降低到百分之一甚至千分之一
+		#通过命令show global status like 'key_read%';来查看Key_read_requests（索引请求次数）和Key_reads（从i/o中读取数据，也就是未命中索引）
+		key_buffer = 64M
+		#6、[mysqld修改]InnoDB使用一个缓冲池来保存索引和原始数据，设置越大,存取表里面数据时所需要的磁盘I/O越少
+		#在一个独立使用的数据库服务器上,你可以设置这个变量到服务器物理内存大小的80%
+		innodb_buffer_pool_size = 128M
+		#7、[mysqld本来就没有]用命令show status like '%query_cache%';检查一下，设置会对各种query造成额外开销，最优就是没有，然后用额外的缓存（比如redis）
+		query_cache_size = 0  
+		# 对于同一主机，如果有超出该参数值个数的中断错误连接，则该主机将被禁止连接。如需对该主机进行解禁，执行：FLUSH HOST。防止黑客
+		max_connect_errors = 6000
+		#[mysqld增加]show processlist显示大量sleep，这可能需要根据laravel是否使用长连接来判断
+		wait_timeout=10
+	Mysql中间件
+		Mycat
+	Redis中间件
+		tweproxy
+		codis
+
+
+Linux性能监控
+	CPU和内存
+		top
+	入站流量和出站流量
+		nload（sudo apt install nload）
+	磁盘IO
+		iostat -x 1 10（sudo apt install sysstat）
+	查看进程信息
+		ps aux | grep httpd | wc -l
+	查看TCP连接信息
+		netstat -an | awk '/tcp/{print $6}' | sort | uniq -c
+			TCP连接状态详解  
+			LISTEN：      侦听来自远方的TCP端口的连接请求
+			SYN-SENT：    再发送连接请求后等待匹配的连接请求
+			SYN-RECEIVED：再收到和发送一个连接请求后等待对方对连接请求的确认
+			ESTABLISHED： 代表一个打开的连接
+			FIN-WAIT-1：  等待远程TCP连接中断请求，或先前的连接中断请求的确认
+			FIN-WAIT-2：  从远程TCP等待连接中断请求
+			CLOSE-WAIT：  等待从本地用户发来的连接中断请求
+			CLOSING：     等待远程TCP对连接中断的确认
+			LAST-ACK：    等待原来的发向远程TCP的连接中断请求的确认
+			TIME-WAIT：   等待足够的时间以确保远程TCP接收到连接中断请求的确认
+			CLOSED：      没有任何连接状态
+	测试HTTP连接
+		curl 192.168.0.116
+	mongodb连接数
+		db.serverStatus().connections;
+	redis连接数
+		info Clients
+	Mysql慢查询
+		[mysqld]
+		slow_query_log = 1
+		log_slow_admin_statements = 1
+		slow_query_log_file = /var/log/mysql/slow.log
+		long_query_time = 0.1
+		log_queries_not_using_indexes = 1
+
+
+
+
+连接Windows的共享文件夹
+	sudo apt-get install smbclient
+	sudo apt-get install cifs-utils
+	sudo mkdir /mnt/share
+	以后每次启动执行
+		sudo mount -t cifs -o username=Administrator //192.168.0.100/share /mnt/share
+
+
+

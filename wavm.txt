@@ -1,0 +1,261 @@
+注意全部变成64位或32位
+1、编译WebAssembly/binaryen和WebAssembly/wabt
+    BINARYEN:
+    创建文件夹build
+    cd build
+    X64:cmake -Thost=x64 -G"Visual Studio 14 Win64" E:\Github\WebAssembly_binaryen
+    Win32:cmake -G"Visual Studio 14" E:\Github\WebAssembly_binaryen
+    打开binaryen.sln编译
+    WABT:
+    创建文件夹build
+    cd build
+    X64:cmake -Thost=x64 -G"Visual Studio 14 Win64" E:\Github\WebAssembly_wabt
+    Win32:cmake -G"Visual Studio 14" E:\Github\WebAssembly_wabt
+    打开binaryen.sln编译
+2、编译LLVM（！编译时间巨长）
+    创建一个文件夹，我在代码目录下创建了build
+    拷贝clang的代码到tools
+    cd E:\SourceCode\llvm-6.0.0.src\build
+    X64:cmake -Thost=x64 -G"Visual Studio 14 Win64" -DCMAKE_INSTALL_PREFIX=C:\LLVM E:\SourceCode\llvm-6.0.0.src -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly
+    Win32:cmake -G"Visual Studio 14" -DCMAKE_INSTALL_PREFIX=C:\LLVM_x86 E:\SourceCode\llvm-6.0.0.src -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly
+    打开LLVM.sln编译"INSTALL"
+    注：EOS用的是4.0版本，emscripten是5.0版本
+    EOS的make：cmake -Thost=x64 -G"Visual Studio 14 Win64" -DCMAKE_INSTALL_PREFIX=C:\LLVM E:\SourceCode\llvm-6.0.0.src -DLLVM_TARGETS_TO_BUILD= \-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly -DCMAKE_BUILD_TYPE=Release
+3、编译WAVM
+    在代码目录下创建了build
+    cd E:\Github\WAVM\build
+    X64:cmake -Thost=x64 -G"Visual Studio 14 Win64" -DLLVM_DIR=E:\SourceCode\llvm-6.0.0.src\build\lib\cmake\llvm E:\Github\WAVM
+    无法编译Win32:cmake -G"Visual Studio 14" -DLLVM_DIR=E:\SourceCode\llvm-6.0.0.src\build_x86\lib\cmake\llvm E:\Github\WAVM
+    打开WAVM.sln编译"ALL_BUILD"
+    RuntimePrivate.h第290行改成：static_assert(offsetof(CompartmentRuntimeData, contexts) + maxContexts * sizeof(ContextRuntimeData) == 4ull * 1024 * 1024 * 1024, "CompartmentRuntimeData isn't the expected size");
+4、使用wavm  https://github.com/AndrewScheidecker/WAVM
+    Usage: wavm [switches] [programfile] [--] [arguments]
+        in.wast|in.wasm     Specify program file (.wast/.wasm)
+        -f|--function name  Specify function name to run in module rather than main
+        -c|--check          Exit after checking that the program is valid
+        -d|--debug          Write additional debug information to stdout
+        --                  Stop parsing arguments
+    ./wavm.exe E:\Github\WAVM\Test\wast\helloworld.wast
+5、  libc源码
+        E:\Github\emscripten\system\include\libc
+        E:\Github\emscripten\system\lib\libc\musl
+    libc++源码
+        E:\Github\emscripten\system\include\libcxx
+        E:\Github\emscripten\system\lib\libcxx
+    E:\Github\emscripten\cmake\Modules\Platform\Emscripten.cmake LINE_184
+        option(EMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES "If set, static library targets generate LLVM bitcode files (.bc). If disabled (default), UNIX ar archives (.a) are generated." OFF)
+    E:\Github\emscripten\embuilder.py  LINE_180
+        build(C_WITH_MALLOC, ['libc.bc'])
+6、编个emscripten试试Emscripten，为了libc.bc和libc++.bc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    直接安装就行
+    https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html
+    emsdk update 提示改用git pull
+    emsdk install latest
+    emsdk activate latest
+    emsdk_env.bat
+    添加环境变量
+    EMSDK = E:\Github\emsdk
+    %EMSDK%
+    %EMSDK%\clang\e1.37.38_64bit
+    %EMSDK%\node\8.9.1_64bit\bin
+    %EMSDK%\python\2.7.13.1_64bit\python-2.7.13.amd64
+    %EMSDK%\java\8.152_64bit\bin
+    %EMSDK%\emscripten\1.37.38
+
+    例子参考https://blog.csdn.net/sinat_32582203/article/details/73355211
+    编译libc.bc
+    INFO:root:generating system asset: is_vanilla.txt... (this will be cached in "C:\Users\Administrator\.emscripten_cache\is_vanilla.txt" for subsequent builds)
+    INFO:root: - ok
+    INFO:root:(Emscripten: Running sanity checks)
+    INFO:root:generating system library: dlmalloc.bc... (this will be cached in "C:\Users\Administrator\.emscripten_cache\asmjs\dlmalloc.bc" for subsequent builds)
+    INFO:root: - ok
+    INFO:root:generating system library: libc.bc... (this will be cached in "C:\Users\Administrator\.emscripten_cache\asmjs\libc.bc" for subsequent builds)
+    INFO:root: - ok
+    INFO:root:generating system library: wasm-libc.bc... (this will be cached in "C:\Users\Administrator\.emscripten_cache\asmjs\wasm-libc.bc" for subsequent builds)
+    INFO:root: - ok
+
+    emcc dice-roll.cpp -s WASM=1 -O0 -o index.js
+
+    emcc hello_world.cpp -O0 -s WASM=1 EMCC_WASM_BACKEND=1
+    EMCC_WASM_BACKEND=1 emcc hello.cpp -s WASM=1
+
+
+7、LLVM工具链
+llvm-as         把human-readable LLVM assembly language转成LLVM bitcode
+llvm-dis        把LLVM bitcode转成human-readable LLVM assembly language
+opt             It takes LLVM source files as input, runs the specified optimizations or analyses on it, and then outputs the optimized file or the analysis results.
+llc             编译LLVM source inputs(bitcode文件)成某个指定平台（-march选项）上的assembly language
+lli             It takes a program in LLVM bitcode format and executes it using a just-in-time compiler or an interpreter
+llvm-link       把多个LLVM bitcode files链接成单个LLVM bitcode file
+
+
+asm2wasm myjs.js                 在命令行显示.s格式文件
+asm2wasm myjs.js >> myjs.s       保存.s文件
+asm2wasm myjs.js -o myjs.wasm    编译成wasm文件
+Disassemble myjs.wasm myjs.wast  把wasm转成wast文件
+Assemble myjs.wast myjs.wasm     把wast转成wasm文件
+wasm-as myjs.wast -o myjs.wasm
+wavm myjs.wasm  怎么传参数
+
+
+正确编译js的姿势
+    function ()
+    {
+        "use asm";
+
+        function add (x, y)
+        {
+            x = x | 0;
+            y = y | 0;
+            return x + y | 0;
+        }
+
+        function square (x)
+        {
+            x = x | 0;
+            return x * x | 0;
+        }
+
+        function main()
+        {
+            return 0;
+        }
+
+        return
+        {
+            add: add,
+            square: square,
+            main: main
+        };
+    }
+    编译：asm2wasm math.js -Os -o math.wasm （一定要带-Os优化，不然无法被wavm调用）
+    运行：wavm math.wasm -f add 1 2
+
+
+编译C++的正确姿势
+第一步：最简单的函数，没有调用其他的库
+hello.cpp：
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+
+    __attribute__((used)) int add(int a, int b)
+    {
+        return a + b;
+    }
+
+    __attribute__((used)) int main()
+    {
+        return 123;
+    }
+
+    #ifdef __cplusplus
+    }
+    #endif
+    注意：extern "C"
+    注意：导出函数前加上 __attribute__((used))，也就是EMSCRIPTEN_KEEPALIVE
+    编译：emcc hello.cpp -Os -s WASM=1 -o hello.js
+    运行：wavm hello.wasm -f _main
+          wavm hello.wasm -f _add 1 2
+    编译成动态链接库：emcc hello.cpp -Os -s WASM=1 -s SIDE_MODULE=1 -o hello.wasm，这种方式只适合在网页中手动加载wasm然后调用，除此外没什么实用价值
+第二步：链接多个模块
+lib.cpp：
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+    int add_internal(int a, int b)
+    {
+        return a + b;
+    }
+    #ifdef __cplusplus
+    }
+    #endif
+app.cpp：
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+        extern int add_internal(int a, int b);
+
+        __attribute__((used)) int add(int a, int b)
+        {
+            return add_internal(a, b);
+        }
+
+        __attribute__((used)) int main()
+        {
+            return 123;
+        }
+    #ifdef __cplusplus
+    }
+    #endif
+    分别编译两个cpp，有依赖关系，链接后生成wasm
+        emcc -O2 lib.cpp -o lib.bc
+        emcc -O2 app.cpp -o app.bc
+        emcc lib.bc app.bc -o link.bc
+        emcc link.bc -Os -s WASM=1 -o app.js
+    运行：wavm app.wasm -f _add 1 2
+第三步：编译libc.bc和libc++.bc，并链接
+    TODO
+第四步：用LLVM工具链
+    关键：You need to compile LLVM with `-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly`. Not in stable yet.
+    4.0 JS
+        asm2wasm math.js -Os -o math.wasm （关键：一定要带-Os优化，不然无法被wavm调用）
+        wavm math.wasm -f add 1 2
+    4.1 单个
+        clang -emit-llvm -Oz --target=wasm32 -c hello.cpp -o linked.bc
+        llc -thread-model=single --asm-verbose=false -march=wasm32 -o assembly.s linked.bc
+        s2wasm -o hello.wast -s 16384 assembly.s
+        wasm-as hello.wast -o hello.wasm
+        wavm hello.wasm -f add 1 2
+    4.2 链接
+        clang -emit-llvm -Oz --target=wasm32 -c lib.cpp -o lib.ll
+        clang -emit-llvm -Oz --target=wasm32 -c app.cpp -o app.ll
+        llvm-link -o app.bc lib.ll app.ll               //llvm-link -only-needed -o linked.bc hello.ll
+        llc -thread-model=single --asm-verbose=false -march=wasm32 -o app.s app.bc
+        s2wasm -o app.wast -s 16384 app.s
+        wasm-as app.wast -o app.wasm
+        wavm app.wasm -f add 1 2
+第五步：使用EMCC生成wasm并在html中使用的正确方式
+    参考https://developer.mozilla.org/en-US/docs/WebAssembly/C_to_wasm
+    5.1、hello.c
+        #include <stdio.h>
+        int main(int argc, char ** argv) {
+          printf("Hello World\n");
+        }
+        emcc hello.c -s WASM=1 -o hello.html
+    5.2、hello2.c
+        #include <stdio.h>
+        int main(int argc, char ** argv) {
+            printf("Hello World\n");
+
+        }
+        创建文件夹html_template拷入shell_minimal.html
+        emcc -o hello2.html hello2.c -O3 -s WASM=1 --shell-file html_template/shell_minimal.html
+    5.3、hello3.c
+        #include <stdio.h>
+        #include <emscripten/emscripten.h>
+        int main(int argc, char ** argv) {
+            printf("Hello World\n");
+        }
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
+        void EMSCRIPTEN_KEEPALIVE myFunction(int argc, char ** argv) {
+          printf("MyFunction Called\n");
+        }
+        #ifdef __cplusplus
+        }
+        #endif
+        WINDOS平台，必须用CMD输入如下：emcc -o hello3.html hello3.c -O3 -s WASM=1 --shell-file html_template/shell_minimal.html -s NO_EXIT_RUNTIME=1  -s EXTRA_EXPORTED_RUNTIME_METHODS=["""ccall"""]
+        WAVM调用：
+        wavm hello3.wasm
+        wavm hello3.wasm -f _myFunction 0 0
+        老版本的WAVM执行出错，最新版本没问题
+            Missing import: module="env" export="table" type="table"
+            Missing import: module="env" export="memory" type="memory"
+    5.4、hellocpp.cpp
+        emcc -o hellocpp.html hellocpp.cpp -O3 -s WASM=1 -s NO_EXIT_RUNTIME=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=["""ccall"""]
+        wavm hellocpp.wasm
+    5.5、hellofile.cpp这个还不行
+        emcc hellofile.cpp -o hellofile.html -s WASM=1 --preload-file tests/hellofile.txt
+        emcc tests/hellofile.cpp -o hellofile.html --preload-file tests/hellofile.txt

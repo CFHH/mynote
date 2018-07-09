@@ -1,0 +1,35 @@
+1. 得有Python
+
+2. 下载 gyp 并安装
+  2.1 下载 gyp , 到一个目录
+    git clone https://github.com/svn2github/gyp
+    也可以在 v8 附属项目中下载(见3.1)
+  2.2 安装 gup
+    在 gyp 目录 执行
+      python setup.py install
+
+3. 下载 v8 及附属项目
+  3.1 下载 v8
+    git clone https://chromium.googlesource.com/v8/v8
+    git clone https://chromium.googlesource.com/external/gyp.git ./v8/tools/gyp
+      //需要安装 gyp  ^python setup.py install^
+    git clone https://chromium.googlesource.com/chromium/deps/icu.git  ./v8/third_party/icu
+      //^icu 比较大(125M)^
+    git clone https://chromium.googlesource.com/chromium/src/tools/clang.git ./v8/tools/clang
+    git clone https://chromium.googlesource.com/external/github.com/google/googletest.git ./v8/testing/    rename googletest gtest //改名
+    git clone https://chromium.googlesource.com/chromium/deps/cygwin.git ./v8/third_party/cygwin
+    //git clone https://chromium.googlesource.com/chromium/src/build.git ./v8/build
+  3.2 拷贝node\deps\v8\gypfiles到v8下
+
+4. 创建VS项目工程
+  4.1 设置环境 变量
+    set DEPOT_TOOLS_WIN_TOOLCHAIN=0
+    set GYP_MSVS_VERSION=2015
+    //set GYP_GENERATORS=ninja //不需要
+    //set GYP_DEFINES=component=shared_library //这个也不需要
+  4.2 在 v8 目录执行,创建VS解决方案
+    python gypfiles\gyp_v8.py -Dtarget_arch=x64 -f msvs
+    生成DLL
+    python gypfiles\gyp_v8.py -Dtarget_arch=x64 -Dcomponent=shared_library -f msvs
+    生成lib
+    python gypfiles\gyp_v8.py -Dtarget_arch=x64 -f msvs
