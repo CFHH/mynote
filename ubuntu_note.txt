@@ -551,4 +551,92 @@ Linux性能监控
 		sudo mount -t cifs -o username=Administrator //192.168.0.100/share /mnt/share
 
 
+GO
+	sudo apt-get update
+	//sudo apt-get install golang-go 这个版本太低了，删除 sudo apt-get remove golang-go
+	去https://golang.google.cn/dl/下载go1.11.linux-amd64.tar.gz	
+	sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+	go环境变量
+		sudo gedit ~/.bashrc
+			export PATH=$PATH:/usr/local/go/bin
+		source ~/.bashrc
+	go version
+	go env
+	go env 看下环境变量，默认的GOPATH是/home/zzw/go，所以也不需要设置环境变量了
+		sudo gedit ~/.bashrc
+			添加 export GOPATH=/home/zzw/go
+				 export GOBIN=$GOPATH/bin
+				 export PATH=$PATH:$GOPATH/bin
+		source ~/.bashrc
+		
+VisualStudioCode
+	下载 https://code.visualstudio.com/Download
+	安装 https://code.visualstudio.com/docs/setup/linux
+		sudo dpkg -i <file>.deb
+		sudo apt-get install -f # Install dependencies
+	启动 code
+	安装go插件 
+		左侧栏插件，搜go，选择Go for Visual Studio Code插件点击安装即可
+VSCODE推荐的16中工具
+		gocode
+		gopkgs
+		go-outline
+		go-symbols
+		guru
+		gorename
+		dlv
+		godef
+		godoc
+		goreturns
+		golint
+		gotests
+		gomodifytags
+		impl
+		fillstruct
+		goplay
+	//下载代码到golang
+	git clone https://github.com/golang/lint  //不确定是否需要
+	git clone https://github.com/golang/tools
+		go install golang.org/x/tools/cmd/guru
+		go install golang.org/x/tools/cmd/gorename
+		go install golang.org/x/tools/cmd/godoc
+	//直接go get -u -v
+	go get -u -v github.com/mdempsky/gocode
+	go get -u -v github.com/derekparker/delve/cmd/dlv
+	go get -u -v github.com/rogpeppe/godef
+	go get -u -v github.com/fatih/gomodifytags
+	go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
+	go get -u -v github.com/haya14busa/goplay/cmd/goplay
+	//下载代码到github
+	git clone https://github.com/ramya-rao-a/go-outline
+		go install github.com/ramya-rao-a/go-outline
+	git clone https://github.com/uudashr/gopkgs
+		go install github.com/uudashr/gopkgs
+	git clone https://github.com/acroca/go-symbols
+		go install github.com/acroca/go-symbols
+	git clone https://github.com/sqs/goreturns
+		go install github.com/sqs/goreturns
+	git clone https://github.com/josharian/impl
+		go install github.com/josharian/impl
+	//下载代码到github/golang
+	git clone https://github.com/golang/lint
+		go install github.com/golang/lint/golint
+	//gotests
+	go get -u -v github.com/cweill/gotests/...
+		go install github.com/cweill/gotests/...
+常用golang/x代码
+git clone https://github.com/golang/crypto
+git clone https://github.com/golang/net
+git clone https://github.com/golang/sys
+	
 
+
+	
+	
+	
+	
+	
+	
+
+	
+	
