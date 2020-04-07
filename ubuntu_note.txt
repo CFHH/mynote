@@ -1,4 +1,115 @@
-﻿工具使用
+﻿superset
+最终让让外网访问：superset run --host 0.0.0.0
+嵌入其他网页：
+	给Public加权限
+		can explore json on Superset
+		can dashboard on Superset
+		all datasource access on all_datasource_access
+		all database access on all_database_access
+	iframe写法
+		<iframe src="http://10.15.101.32:5000/superset/dashboard/10/?standalone=true"
+            height=768
+            width=1024
+            seamless
+            frameBorder="0"
+            scrolling="no"
+        >
+跨域：修改~/superset/lib/python3.6/site-packages/superset/config.py
+	WTF_CSRF_ENABLED = False
+	
+安装了自己编的安装包
+superset这个命令不存在，
+cd ~/zzw/lib/python3.6/site-packages
+expose FLASK_APP=superset
+flask db upgrade
+flask fab create-admin
+flask load_examples
+flask init
+flask run --host 0.0.0.0
+图标、应用名：可配置 APP_NAME APP_ICON
+
+
+redash
+1、安装python3，PostgreSQL, Redis，Node.js
+	sudo apt-get install python3-dev
+	sudo apt-get install python3-pip
+	sudo apt-get install python3-venv
+	
+	sudo apt-get install postgresql
+	sudo -u postgres psql
+	ALTER USER postgres WITH PASSWORD '123456';
+	\q
+	
+	sudo apt-get install redis-server
+	redis-cli
+	info
+	exit
+	
+	sudo apt-get install node
+	sudo apt-get install nopm
+	sudo npm config set registry https://registry.npm.taobao.org
+	sudo npm install n -g
+	sudo n stable
+	重启控制台
+	node -v
+	npm -v
+	
+	pip install wheel
+	sudo apt-get install libpq-dev
+	npm update caniuse-lite browserslist
+	sudo su - postgres -c "createuser -s ubuntu"
+	
+2、python3 -m venv p3redash
+	把redash的代码拷入p3redash
+	
+3、. p3redash/bin/activate
+
+4、根据https://redash.io/help/open-source/dev-guide/setup
+	pip install -r requirements.txt
+	pip install -r requirements_dev.txt
+	npm install
+	npm run build
+	./manage.py database create_tables
+	./manage.py runserver  --host 0.0.0.0 【--port 5000】
+	
+
+
+
+1、安装
+pip install --upgrade setuptools pip
+pip install apache-superset
+
+2、创建用户
+fabmanager create-admin --app superset
+或
+设置FLASK_APP，linux是export FLASK_APP=superset，然后执行 flask fab create-admin
+
+
+3、进入C:\Users\Administrator\AppData\Local\Programs\Python\Python37\Lib\site-packages\superset\bin，执行
+python superset db upgrade
+Python superset load_examples
+Python superset init
+
+
+Windows命令行设置代理(有管理员权限的cmd)：
+set http_proxy=http://127.0.0.1:50303
+set https_proxy=https://127.0.0.1:50303
+设置代理：
+	x:>netsh
+	netsh>winhttp
+	netsh winhttp>
+	netsh winhttp>set proxy 127.0.0.1:50303
+取消代理：
+	x:>netsh
+	netsh>winhttp
+	netsh winhttp>
+	netsh winhttp>reset proxy
+查看代理：
+	netsh winhttp>show proxy
+	Current WinHTTP proxy settings:
+		Direct access (no proxy server).
+
+工具使用
 	打开一个新的terminal标签的快捷键：ctrl+shift+t
 	连接其他的ubuntu：ssh fct@192.168.1.125
 	FTP的使用：
@@ -9,6 +120,29 @@
 		下载：git clone https://github.com/CFHH/laravelapp
 		更新：cd laravelapp
 			  git pull
+		设置代理：
+			git config --global http.proxy http://127.0.0.1:50303
+			git config --global https.proxy https://127.0.0.1:50303
+		取消代理：
+			git config --global --unset http.proxy
+			git config --global --unset https.proxy
+		查看代理：
+			git config --global --get http.proxy
+			git config --global --get https.proxy
+	终端走代理（仅当前有效）：
+		export http_proxy=http://10.15.101.40:50303
+		export https_proxy=https://10.15.101.40:50303
+		export ALL_PROXY=socks5://10.15.101.40:50302
+	SS
+		sudo apt-get update
+		sudo apt-get install python-pip
+		sudo pip install shadowsocks
+		配置 sudo gedit /etc/shadowsocks.json
+		启动 sudo sslocal -c /etc/shadowsocks.json
+
+
+	APT
+		apt-cache policy cmake 检查cmake有哪些版本可以装
 
 
 sudo不能打开GUI程序
@@ -35,6 +169,9 @@ sudo不能打开GUI程序
 		[Install]
 		 WantedBy=multi-user.target
 	执行sudo systemctl enable rc-local.service
+	
+	
+Python
 
 
 下载安装xampp和laravel
@@ -164,6 +301,11 @@ mongodb数据库
 	sudo apt-get install -y mongodb-org或者sudo apt-get install -y mongodb-org=3.6.2 mongodb-org-server=3.6.2 mongodb-org-shell=3.6.2 mongodb-org-mongos=3.6.2 mongodb-org-tools=3.6.2
 	如果没有则手动新建/lib/systemd/system/mongod.service
 	自动启动，在lampp.sh中增加service mongod start
+	////4.0版本////
+	sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+	echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+	sudo apt-get update
+	sudo apt-get install -y mongodb-org
 命令行启动
 	sudo service mongod start
 	sudo service mongod restart
@@ -539,6 +681,13 @@ Linux性能监控
 		slow_query_log_file = /var/log/mysql/slow.log
 		long_query_time = 0.1
 		log_queries_not_using_indexes = 1
+		
+		
+ThinkPHP3.2.5
+	http://serverName/index.php（或者其他应用入口文件）/模块/控制器/操作/[参数名/参数值...]
+		http://localhost:8081/index.php/zzw/index/index2
+	php.exe index.php(或其它应用入口文件） 模块/控制器/操作/[参数名/参数值...]
+		php.exe index.php zzw/index/index2
 
 
 
@@ -548,7 +697,7 @@ Linux性能监控
 	sudo apt-get install cifs-utils
 	sudo mkdir /mnt/share
 	以后每次启动执行
-		sudo mount -t cifs -o username=Administrator //192.168.0.100/share /mnt/share
+		sudo mount -t cifs -o username=Administrator //10.15.101.40/share /mnt/share
 
 
 GO
@@ -577,7 +726,7 @@ VisualStudioCode
 	启动 code
 	安装go插件 
 		左侧栏插件，搜go，选择Go for Visual Studio Code插件点击安装即可
-VSCODE推荐的16中工具
+VSCODE推荐的16种工具
 		gocode
 		gopkgs
 		go-outline
@@ -624,10 +773,31 @@ VSCODE推荐的16中工具
 	//gotests
 	go get -u -v github.com/cweill/gotests/...
 		go install github.com/cweill/gotests/...
-常用golang/x代码
-git clone https://github.com/golang/crypto
-git clone https://github.com/golang/net
-git clone https://github.com/golang/sys
+	常用golang/x代码
+	git clone https://github.com/golang/crypto
+	git clone https://github.com/golang/net
+	git clone https://github.com/golang/sys
+卡顿
+打开vscode之后，点击文件==>首选项==>设置
+搜索设置 search.followSymlinks 
+然后在右侧用户自定义设置中将这个值改为 false，search.followSymlinks = false,
+
+
+CMake
+	安装 https://peshmerge.io/how-to-install-cmake-3-11-0-on-ubuntu-16-04/
+gmpliv
+	https://gmplib.org/
+	./configure
+	make
+	make install
+	
+	
+进到 relic 目录
+mkdir -p relic-target
+cd relic-target
+../preset/x64-pbc-128-b12.sh ../
+这步会缺cmake，然后缺少<gmp.h>
+make
 	
 
 
