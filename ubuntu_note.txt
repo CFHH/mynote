@@ -89,7 +89,7 @@ redash（python3.6）
 	pip3 install pydruid==0.5.7
 	npm install
 	npm run build
-	sudo su - postgres -c "createuser -s ubuntu"【create_tables报错，报错再说，ubuntu是提示的内容】
+	sudo su - postgres -c "createuser -s ubuntu"【create_tables报错，报错再说，ubuntu是提示的内容，一般是当前的用户名，如果是root不报错】
 	./manage.py database create_tables
 	./manage.py database setup_admin
 	
