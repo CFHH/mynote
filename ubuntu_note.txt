@@ -28,53 +28,6 @@ flask init
 flask run --host 0.0.0.0
 图标、应用名：可配置 APP_NAME APP_ICON
 
-
-redash
-1、安装python3，PostgreSQL, Redis，Node.js
-	sudo apt-get install python3-dev
-	sudo apt-get install python3-pip
-	sudo apt-get install python3-venv
-	
-	sudo apt-get install postgresql
-	sudo -u postgres psql
-	ALTER USER postgres WITH PASSWORD '123456';
-	\q
-	
-	sudo apt-get install redis-server
-	redis-cli
-	info
-	exit
-	
-	sudo apt-get install node
-	sudo apt-get install nopm
-	sudo npm config set registry https://registry.npm.taobao.org
-	sudo npm install n -g
-	sudo n stable
-	重启控制台
-	node -v
-	npm -v
-	
-	pip install wheel
-	sudo apt-get install libpq-dev
-	npm update caniuse-lite browserslist
-	sudo su - postgres -c "createuser -s ubuntu"
-	
-2、python3 -m venv p3redash
-	把redash的代码拷入p3redash
-	
-3、. p3redash/bin/activate
-
-4、根据https://redash.io/help/open-source/dev-guide/setup
-	pip install -r requirements.txt
-	pip install -r requirements_dev.txt
-	npm install
-	npm run build
-	./manage.py database create_tables
-	./manage.py runserver  --host 0.0.0.0 【--port 5000】
-	
-
-
-
 1、安装
 pip install --upgrade setuptools pip
 pip install apache-superset
@@ -89,6 +42,264 @@ fabmanager create-admin --app superset
 python superset db upgrade
 Python superset load_examples
 Python superset init
+
+
+
+
+redash（python3.6）
+1、安装python3，PostgreSQL, Redis，Node.js
+	sudo apt-get install python3-dev
+	sudo apt-get install python3-pip
+	sudo apt-get install python3-venv
+	
+	sudo apt-get install postgresql
+	sudo -u postgres psql    或sudo - postgres 然后执行psql
+	ALTER USER postgres WITH PASSWORD '123456';
+	\q
+	
+	sudo apt-get install redis-server
+	redis-cli
+	info
+	exit
+	
+	sudo apt-get install nodejs
+	sudo apt-get install npm
+	sudo npm config set registry https://registry.npm.taobao.org
+	sudo npm install n -g
+	sudo n stable
+	重启控制台
+	node -v
+	npm -v
+	
+	sudo apt-get install libpq-dev
+	npm update caniuse-lite browserslist			【可选，npm run build时的提示】
+	sudo apt-get install build-essential libssl-dev libffi-dev libsasl2-dev libldap2-dev libmysqlclient-dev unixodbc-dev【requirements_all_ds.txt】
+	
+2、python3 -m venv p3redash
+	把redash的代码拷入p3redash
+	
+3、. p3redash/bin/activate
+
+4、根据https://redash.io/help/open-source/dev-guide/setup
+	cd p3redash/redash
+	pip3 install wheel
+	pip3 install -r requirements.txt
+	pip3 install -r requirements_dev.txt
+	pip3 install mysqlclient==1.3.14 【pip3 install -r requirements_all_ds.txt】【支持mysql等其他数据源】
+	pip3 install pydruid==0.5.7
+	npm install
+	npm run build
+	sudo su - postgres -c "createuser -s ubuntu"【create_tables报错，报错再说，ubuntu是提示的内容】
+	./manage.py database create_tables
+	./manage.py database setup_admin
+	
+5、启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	redis-cli -h localhost -p 6379 flushall
+	./manage.py runserver  --host 0.0.0.0 & 【--port 5000】
+	./manage.py rq worker &
+	./manage.py rq scheduler &
+	
+	./manage.py rq worker scheduled_queries periodic emails default schemas &
+	./manage.py rq worker queries &
+	./manage.py rq worker scheduled_queries &
+	sleep 1
+
+6、关闭
+	ps aux | grep manage.py
+	kill -9 $(ps -ef|grep manage.py|grep -v grep|awk '{print $2}')
+	
+6、集成vue	
+	一、创建虚拟python环境
+		py -3 -m venv v-flask_vue_spa
+		v-flask_vue_spa内创建文件夹project，做为项目主目录，内建client和server
+	二、客户端
+		命令行vue ui，在v-flask_vue_spa/project下创建项目client
+		在插件中，添加vue-router，new VueRouter()时指定mode: 'hash'
+		在配置中，设置资源目录为static；这个不单设一个文件夹，python运行时网页出错
+		进入client，运行npm install --save axios【区分--save和--save-dev】
+		编译
+	三、服务器
+		命令行中运行v-flask_vue_spa\Scripts\activate进入虚拟环境
+		pip install falsk
+		pip install flask_cors
+		创建文件夹v-flask_vue_spa/project，创建文件run.py，创建Flask时static_folder对应client/dist/static，template_folder对应client/dist
+		运行服务器前先在命令行运行 set FLASK_APP=run.py ，然后 flask run
+		
+7、redis的一些操作
+查看job数量 	zcount rq:scheduler:scheduled_jobs 0 999999999999999
+worker进程  	smembers rq:workers
+				keys *rq:worker:*
+queue队列		keys *rq:workers:*
+worker当前job	hget rq:worker:cb8068f4dccc4024a79e83db00be76d5 current_job
+
+7、缓存信息
+（一）SCHEDULE
+keys *schedule*
+查看schedule相关的缓存信息
+
+（二）WORKER
+keys *worker*
+查看worker相关的缓存信息，rq:worker:开头的都是具体的一个worker
+
+smembers rq:workers
+查看所有的worker
+
+smembers rq:workers:queries
+查看为名为queries的QUEUE工作的worker
+
+hgetall rq:worker:cb8068f4dccc4024a79e83db00be76d5
+hget rq:worker:cb8068f4dccc4024a79e83db00be76d5 current_job
+查看某个具体worker的current_job, state, successful_job_count, failed_job_count, total_working_time, queues, pid, birth, death, last_heartbeat, hostname，举例如下
+"birth"					"2020-08-21T07:27:25.528026Z"
+"last_heartbeat" 		"2020-08-25T06:16:32.496566Z"
+"queues" 				"scheduled_queries,queries,periodic,emails,default,schemas"
+"pid" 					"20770"
+"hostname" 				"ubuntu"
+"state" 				"idle"
+"successful_job_count" 	"21872"
+"total_working_time"	"22004.33879800000005744"
+
+
+（三）QUEUE
+smembers rq:queues
+列举当前的QUEUE
+
+rq:queues:queries类似这样的key的内容是job_id的List，缓存时间180秒
+
+
+
+（四）JOB
+keys *rq:job:*
+列举所有job
+
+
+（五）其他
+keys *registr*
+1) "rq:clean_registries:default"
+2) "rq:clean_registries:schemas"
+3) "rq:clean_registries:periodic"
+4) "rq:clean_registries:scheduled_queries"
+5) "rq:clean_registries:emails"
+6) "rq:clean_registries:queries"
+
+
+hgetall rq:job:8469d2ca-2296-4475-a120-0b9ca021c068
+hget rq:job:8469d2ca-2296-4475-a120-0b9ca021c068 status
+查看某个具体worker的信息，举例如下
+"enqueued_at" 	"2020-08-25T05:48:43.407277Z"
+"started_at" 	"2020-08-25T05:48:43.422264Z"
+"ended_at" 		"2020-08-25T05:48:44.289082Z"
+"created_at" 	"2020-08-25T05:48:43.407119Z"
+"description"	"redash.tasks.queries.execution.execute_query('X{\\r\\n    \"tables\": [\\r\\n\\r\\n    ],\\r\\n    \"sub_queries\":[\\r\\n    {\\r\\n        \"name\": \"time_1\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-12T00:00:00\\' AND __time<\\'2018-07-13T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_2\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-11T00:00:00\\' AND __time<\\'2018-07-12T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_3\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-10T00:00:00\\' AND __time<\\'2018-07-11T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_4\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-09T00:00:00\\' AND __time<\\'2018-07-10T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_5\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-08T00:00:00\\' AND __time<\\'2018-07-09T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_6\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-07T00:00:00\\' AND __time<\\'2018-07-08T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    },\\r\\n    {\\r\\n        \"name\": \"time_7\",\\r\\n        \"query\": \"SELECT dates,COUNT(ANALYSIS_ORDER_NO) AS NUM FROM(SELECT ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) AS dates FROM medical_treatment_hospital_analysis WHERE __time>=\\'2018-07-06T00:00:00\\' AND __time<\\'2018-07-07T00:00:00\\' GROUP BY ANALYSIS_ORDER_NO,DATE_TRUNC(\\'hour\\',__time) ORDER BY dates) GROUP BY dates\"\\r\\n    }\\r\\n    ]\\r\\n}', 1, {'Username': 'admin@playblock.com', 'Query ID': '252', 'Queue': 'queries', 'Enqueue Time': 1598334523.4070466}, is_api_key=False, scheduled_query_id=None, user_id=1)"
+"meta"			"\x80\x04\x95M\x00\x00\x00\x00\x00\x00\x00}\x94(\x8c\x0edata_source_id\x94K\x01\x8c\x06org_id\x94K\x01\x8c\tscheduled\x94\x89\x8c\bquery_id\x94\x8c\x03252\x94\x8c\auser_id\x94K\x01u."
+"result" 		"\x80\x04\x95\x04\x00\x00\x00\x00\x00\x00\x00M\x1a\x87."
+"timeout"		"-1"
+"data"			"x\x9c\xdd\x96Ok\xd4@\x18\xc6WTZ\xa2A\xd0/0\xe4\xb2YHC\x92\xda\xee\xbaX1\xee\xc6Zl\x13\xcd&\xd8Rd\x98M\x066l\xfel3\x13p\x91\x05o\"\x04O\xe3\a\xf3$\xf8i\xcc?h\xc5C\xf0\xa2K\x86\x1c\x92\xe7}\x9f\xf7y\xf9\xe52\x9f\xee|{p\xafW\x1d1\x97R\xec#\xb2\x90)\"K\"_e8\r0\x91\xf1\a\xece4H\xe2\xe6\r\xc3\xb2\xb2f\xe6\xf9\x11\xd7\xeb\x9d\x7f\xe49P\x1c\x81\xa2y\x88\x890\x06\x97<WK\xef\xa5\xa6D\xb29l\xa6\t\xe3\xcbZllU=F\x11.\x8c\x02\r\"\x0cUA\xbaQ\xaa\xa2\xca\xda\xcc85&\x0e\xf0\x11\xc5D\x9aX\xae\xe9\x88\xba\xa9\x9f^\xccNf\xd0\xb2\xa7\x86\rMk\x00\xf4\x190\xdd3\xf0\xd2\xb6\xce\xc4\xc6\xf1G\x974\xd5\x1d\x03:\xb6kN\xc4\xfe\"\xc9\xd2\xbe\x04a\x19]\xd9\xab\x80j\x00\x88\xb0\x1fx(\x844\xc5\x88F8\xa6p\x91\x90U@\x0b\t\xc5(\\\x93\x80\x80w\xaf\x0c\xdb\x00\xb5\xff\xd9Q_S\xd4\xd1\x9e2\xdcS5GQ\xc6\xd5\xd3/6\x986\x1dO\xaf\x1b\xf6o4\x1c\xdb\x96\xfb\x06\xbc\xb8\xf8\xab]\xab\x96\xd2Tm<\xb8\x1eR}\x0b5\xc3\x8d\xd4B[\xeb\x04m\xb5\x8d\xb6\xb6\x1d\xb4\xf7;A[i\xa3\xadn\a\xed\xc7]\xa0\xad<i\xa3\xadl\a\xed\x83N\xd0\x1e\xb5\xd0\xfe\xedw\xfcG\xda\x87\x9d\xa0=l\xa3=\xda\x0e\xda\xc3N\xd0>l\xa3=\xfc7\xb4\x9b\xdb!\xcfm\xd8\xeb[\x1b&\xe6\xbb.\xc1i\t\x9c\xe5\x8f\x90\x1f\x05\xf1\xf3U\x88\xd6\xf30\xf1\x96\xb2\x97D,\xdf}[\"\a'S\x96\xdf\xd6\x0e4\x96\xdf-\x84\xach\xdfi\xae\x95,\xbfo\xc4W\xa5\x06\x9cb\x13v\xac\xff\xf8>\xf8\xfa\x93\xe7\xb3\xcf\xacL\xd8\xc9\x8a\x04\x18\xf8E`\xfe\x90x\x0b\xecg!\xf6\xeb\x8bl)\x9b9\x17\x10\x88V\x01\\\xe25\xfb\x92Q&\xff\x02=\xa01m"
+"status"		"finished"
+"origin"		"queries"
+"result_ttl"	"1800"
+
+
+
+
+
+mklink /j "D:\v-redash\redash" "E:\Github\redash"
+
+
+postgre操作
+sudo /etc/init.d/portgresql reload  重新加载配置
+sudo /etc/init.d/postgresql restart 重启
+sudo -u postgres psql  进入数据库postgres
+\d  列出当前库中的所有表
+CREATE ROLE root SUPERUSER PASSWORD '123456' LOGIN; 创建新的超级用户
+
+远程访问
+/etc/postgresql/10/main/pg_hba.conf
+	host  all    all    10.15.101.1/24    md5
+/etc/postgresql/10/main/postgresql.conf
+	#listen_addresses=’localhost  =>  listen_addresses=’*' 
+	端口是5432
+	
+备份
+/var/lib/postgresql/10/main下的所有数据拷贝下来，替换另外一个机器的相应文件夹，并执行这个
+chown -R postgres.postgres main/
+
+如果发现有一下语言错误
+FATAL: database locale is incompatible with operating system DETAIL: 
+The database was initialized with LC_COLLATE "zh_CN.UTF-8", which is not recognized by setlocale(). 
+HINT: Recreate the database with another locale or install the missing locale.
+就执行这个
+sudo locale-gen zh_CN.UTF-8
+	
+Success. You can now start the database server using:
+
+    /usr/lib/postgresql/10/bin/pg_ctl -D /var/lib/postgresql/10/main -l logfile start
+
+Ver Cluster Port Status Owner    Data directory              Log file
+10  main    5432 down   postgres /var/lib/postgresql/10/main /var/log/postgresql/postgresql-10-main.log
+update-alternatives: using /usr/share/postgresql/10/man/man1/postmaster.1.gz to provide /usr/share/man/man1/postmaster.1.gz (postmaster.1.gz) in auto mode
+
+
+
+
+/ext/redis/redis.conf
+	#bind 127.0.0.1
+	protected-mode no
+/etc/init.d/redis-server restart
+
+
+
+登录URL
+http://10.15.101.53:5000/login
+
+GET http://10.15.101.53:5000/api/queries/3
+
+添加数据
+db.session.add
+models.db.session.commit()
+
+
+过滤
+SELECT DATE(__time) AS __timestamp,
+       `SALES_ACCOUNT`,
+       sum(`ORDER_COUNT`) AS `订单量`
+FROM travels_demo
+WHERE __time >= '{{ TimeRange.start }}'
+  AND __time <= '{{ TimeRange.end }}'
+  AND `EVENT_TYPE` = '数据报告'
+  AND `SALES_ACCOUNT` IN({{ SalesName }})
+GROUP BY DATE(__time),
+         `SALES_ACCOUNT` ;
+		 
+所有业务员
+SELECT `SALES_ACCOUNT`
+FROM travels_demo
+GROUP BY `SALES_ACCOUNT`
+ORDER BY `SALES_ACCOUNT`;
+
+业务员的订单量
+SELECT DATE(__time) AS __timestamp,
+       `SALES_ACCOUNT`,
+       sum(`ORDER_COUNT`) AS `订单量`
+FROM travels_demo
+WHERE __time >= STR_TO_DATE('2020-01-01 00:00:00', '%Y-%m-%d %H:%i:%s')
+  AND __time <= STR_TO_DATE('2020-01-31 00:00:00', '%Y-%m-%d %H:%i:%s')
+  AND `EVENT_TYPE` = '数据报告'
+  AND `SALES_ACCOUNT` != 'NONE'
+GROUP BY DATE(__time),
+         `SALES_ACCOUNT` ;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 Windows命令行设置代理(有管理员权限的cmd)：
@@ -379,12 +590,14 @@ redis缓存：
 	info Clients
 	set key1 "hello"
 	get key1
-	dbsize		看数据库文件大小
-	select 11   选择库
-	keys *		枚举所有key
-	flushall	清空整个 Redis 服务器的数据(删除所有数据库的所有key)
-	flushdb		清空当前数据库中的所有key
-	exit		退出
+	dbsize			看数据库文件大小
+	select 11   	选择库
+	keys *			枚举所有key
+	keys *keyword*	枚举含keyword的key
+	del keyword     删除全匹配是keyword的key，不能通配符
+	flushall		清空整个 Redis 服务器的数据(删除所有数据库的所有key)
+	flushdb			清空当前数据库中的所有key
+	exit			退出
 Laravel支持
 	composer require predis/predis
 
